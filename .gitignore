@@ -8,3 +8,6 @@
 
 # ignore dagster local home
 dg_home/
+
+# ignore local data
+./data
