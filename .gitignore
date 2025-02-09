@@ -5,3 +5,6 @@
 .venv/
 .env
 *.iml
+
+# ignore dagster local home
+dg_home/
