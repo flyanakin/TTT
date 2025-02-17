@@ -38,7 +38,7 @@ def _column_check(obj: pd.DataFrame, file_path: str, context: OutputContext):
 
 class CsvIOManager(IOManager):
     """
-    使用场景，单个文件，没有分区，支持增量写入
+    使用场景，单个文件，没有分区，支持增量写入，没有读取方法
     """
 
     def handle_output(self, context: OutputContext, obj: pd.DataFrame):
@@ -63,6 +63,34 @@ class CsvIOManager(IOManager):
         return pd.read_csv(file_path)
 
 
+class CsvIngestionIOManager(IOManager):
+    """
+    写入单个csv文件，没有分区，通过读取文件是否存在，判断concat还是直接写
+    """
+
+    def handle_output(self, context: OutputContext, obj: pd.DataFrame):
+        dir_path, file_name, file_path = _get_path(context.asset_key.path)
+        # 对已存在的文件，进行增量写入
+        if os.path.exists(file_path):
+            context.log.info(f"文件{file_path}已存在，将进行增量写入")
+            df = pd.read_csv(file_path)
+            _column_check(obj, file_path, context)
+            df = pd.concat([df, obj], ignore_index=True)
+            return df.to_csv(file_path, index=False)
+        else:
+            context.log.info(f"文件{file_path}不存在，将创建文件和文件夹")
+            os.makedirs(dir_path, exist_ok=True)
+            return obj.to_csv(file_path, index=False)
+
+    def load_input(self, context: InputContext):
+        pass
+
+
 @io_manager
 def csv_io_manager():
     return CsvIOManager()
+
+
+@io_manager
+def csv_ingestion_io_manager():
+    return CsvIngestionIOManager()

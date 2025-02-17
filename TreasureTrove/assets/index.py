@@ -26,7 +26,7 @@ index_ts_code_mapping = {
 @asset(
     group_name='China_index',
     key=AssetKey(["sources", "tushare", "china_index_daily"]),
-    io_manager_key="pandas_csv",
+    io_manager_key="pandas_csv_ingestion",
 )
 def china_index_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
     """
@@ -42,7 +42,7 @@ def china_index_daily(context: AssetExecutionContext, env: EnvResource) -> pd.Da
     ts_codes = list(index_ts_code_mapping.values())
 
     # 读取存储数据，确定每个指数的最后更新日期
-    default_trade_date = '19910101'  # 默认交易起始日期
+    default_trade_date = pd.to_datetime('19910101')  # 默认交易起始日期
 
     asset_key_path = context.asset_key.path
     filename = f"{asset_key_path[-1]}.csv"
