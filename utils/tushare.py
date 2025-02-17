@@ -83,7 +83,7 @@ class TushareFetcher:
 def get_ts_source_last_trade_date_by_tscode(
         path: str,
         ts_codes: list[str] = None,
-        default_trade_date: str = '19910101',
+        default_trade_date: pd.Timestamp = None,
         context=None
 ) -> pd.DataFrame:
     """
