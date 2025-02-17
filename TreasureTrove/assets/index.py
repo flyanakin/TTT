@@ -98,3 +98,29 @@ def stg_china_index_daily(context: AssetExecutionContext, env: EnvResource) -> p
     context.log.info(f"A股指数日线数据共\n{len(daily)}条")
 
     return daily
+
+
+@asset(
+    group_name='Ingestion',
+    key=AssetKey(["sources", "tushare", "china_index_info"]),
+    io_manager_key="pandas_csv",
+)
+def china_index_info(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
+    """
+    A股指数基本信息
+    :param context:
+    :param env:
+    :return:
+    """
+    # tushare初始化
+    ts.set_token(env.tushare_token)
+    pro = ts.pro_api()
+
+    markets = ['MSCI', 'CSI', 'SSE', 'SZSE', 'CICC', 'SW', 'OTH']
+
+    results = []
+    for market in markets:
+        batch = pro.index_basic(market=market)
+        context.log.info(f"已获取到{market}市场指数信息，共{len(batch)}条数据")
+        results.append(batch)
+    return pd.concat(results)
