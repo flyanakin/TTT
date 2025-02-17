@@ -12,6 +12,7 @@ class TushareFetcher:
                  ts_codes: list[str] = None,
                  max_rows: int = 8000,
                  window_days: int = 90,
+                 code_field: str = 'ts_code',
                  context=None
                  ):
         """
@@ -28,6 +29,7 @@ class TushareFetcher:
         self.max_rows = max_rows
         self.window_days = window_days
         self.context = context
+        self.code_field = code_field
 
     def _date_range(self,
                     start: datetime,
@@ -73,11 +75,22 @@ class TushareFetcher:
         results = []
         for s, e in self._date_range(start, end):
             self.context.log.info(f"Fetching {ts_code} data from {s} to {e}")
-            batch = self.fetch_func(ts_code=ts_code, start_date=s.strftime("%Y%m%d"), end_date=e.strftime("%Y%m%d"))
+            # 构造动态参数字典
+            params = {
+                self.code_field: ts_code,
+                "start_date": s.strftime("%Y%m%d"),
+                "end_date": e.strftime("%Y%m%d")
+            }
+            batch = self.fetch_func(**params)
             time.sleep(3)
             results.append(batch)
             self.context.log.info(f"Fetched {len(batch)} rows")
-        return pd.concat(results, ignore_index=True)
+
+        if len(results) == 0:
+            self.context.log.info(f"No data found for {ts_code}")
+            return pd.DataFrame()
+        else:
+            return pd.concat(results, ignore_index=True)
 
 
 def get_ts_source_last_trade_date_by_tscode(
@@ -118,9 +131,11 @@ def get_ts_source_last_trade_date_by_tscode(
         # 对于未查到记录的ts_code，填充默认trade_date
         trade_date_df['trade_date'] = trade_date_df['trade_date'].fillna(default_trade_date)
 
-        # 如果trade_date等于今天，则去掉这一行
-        trade_date_df['trade_date'] = pd.to_datetime(trade_date_df['trade_date']).dt.date
-        trade_date_df = trade_date_df[trade_date_df['trade_date'] != pd.Timestamp.now().date()]
+        # 如果trade_date等于今天，则去掉这一行，复制再去掉
+        trade_date_df['date'] = trade_date_df['trade_date']
+        trade_date_df['date'] = pd.to_datetime(trade_date_df['date']).dt.date
+        trade_date_df = trade_date_df[trade_date_df['date'] != pd.Timestamp.now().date()]
+        trade_date_df = trade_date_df.drop(columns=['date'], inplace=True)
         # context.log.debug(f"now\n{pd.Timestamp.now().date()}")
-        context.log.info(f"目标symbol最后交易日期\n{trade_date_df}")
+    context.log.info(f"目标symbol最后交易日期\n{trade_date_df}")
     return trade_date_df
