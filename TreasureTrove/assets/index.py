@@ -17,6 +17,7 @@ index_ts_code_mapping = {
     "中证500": "000905.SH",
     "沪深300": "000300.SH",
     "上证指数": "000001.SH",
+    "深证成指": "399001.SZ",
     "创业板指": "399006.SZ",
     "中证1000": "000852.SH",
     "科创50": "000688.SH",
@@ -124,3 +125,52 @@ def china_index_info(context: AssetExecutionContext, env: EnvResource) -> pd.Dat
         context.log.info(f"已获取到{market}市场指数信息，共{len(batch)}条数据")
         results.append(batch)
     return pd.concat(results)
+
+
+@asset(
+    group_name='Ingestion',
+    key=AssetKey(["sources", "tushare", "china_index_daily_metrics"]),
+)
+def china_index_daily_metrics(context: AssetExecutionContext, env: EnvResource):
+    """
+    A股指数每日指标
+    :param context:
+    :param env:
+    :return:
+    """
+    # tushare初始化
+    ts.set_token(env.tushare_token)
+    pro = ts.pro_api()
+
+    ts_codes = list(index_ts_code_mapping.values())
+
+    # 读取存储数据，确定每个指数的最后更新日期
+    default_trade_date = pd.to_datetime('20040101')  # 默认交易起始日期
+
+    asset_key_path = context.asset_key.path
+    dir_path, file_name, file_path = get_path(asset_key_path)
+    last_dates = get_ts_source_last_trade_date_by_tscode(
+        path=file_path,
+        ts_codes=ts_codes,
+        default_trade_date=default_trade_date,
+        context=context,
+    )
+
+    daily_fetcher = TushareFetcher(
+        fetch_func=pro.index_dailybasic,
+        ts_codes=ts_codes,
+        window_days=4000,
+        context=context,
+        max_rows=4000,
+    )
+
+    results = []
+    for index, row in last_dates.iterrows():
+        batch = daily_fetcher.single_ts_code_fetch(
+            ts_code=row['ts_code'],
+            start_date=row['trade_date'].strftime('%Y%m%d'),
+            end_date=datetime.now().strftime('%Y%m%d'),
+        )
+        results.append(batch)
+
+    ingestion_output(asset_key_path, context, pd.concat(results))
