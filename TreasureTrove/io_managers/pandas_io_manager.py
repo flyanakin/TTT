@@ -4,6 +4,7 @@ from typing import Sequence
 import pandas as pd
 from dagster import (
     IOManager,
+    ConfigurableIOManager,
     io_manager,
     OutputContext,
     InputContext,
@@ -36,7 +37,7 @@ def _column_check(obj: pd.DataFrame, file_path: str, context: OutputContext):
             raise Exception(f"文件{file_path}的列名不匹配")
 
 
-class CsvIOManager(IOManager):
+class CsvIOManager(ConfigurableIOManager):
     """
     使用场景，单个文件，没有分区，支持增量写入，没有读取方法
     """
@@ -57,7 +58,7 @@ class CsvIOManager(IOManager):
         return pd.read_csv(file_path)
 
 
-class CsvIngestionIOManager(IOManager):
+class CsvIngestionIOManager(ConfigurableIOManager):
     """
     写入单个csv文件，没有分区，通过读取文件是否存在，判断concat还是直接写
     """
@@ -79,12 +80,3 @@ class CsvIngestionIOManager(IOManager):
     def load_input(self, context: InputContext):
         pass
 
-
-@io_manager
-def csv_io_manager():
-    return CsvIOManager()
-
-
-@io_manager
-def csv_ingestion_io_manager():
-    return CsvIngestionIOManager()

@@ -3,7 +3,7 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetIn,
-    StaticPartitionsDefinition
+    StaticPartitionsDefinition, io_manager, resource
 )
 import pandas as pd
 import os
@@ -73,3 +73,31 @@ def china_index_daily(context: AssetExecutionContext, env: EnvResource) -> pd.Da
         results.append(batch)
 
     return pd.concat(results, ignore_index=True)
+
+
+@asset(
+    group_name='China_index',
+    key=AssetKey(["staging", "index", "china_index_daily"]),
+    ins={
+        "daily": AssetIn(key=["sources", "tushare", "china_index_daily"])
+    },
+    io_manager_def="pandas_csv_full_update",
+)
+def stg_china_index_daily(context: AssetExecutionContext, daily: pd.DataFrame, env: EnvResource) -> pd.DataFrame:
+    """
+    A股指数日线数据标准化清洗
+    :param context:
+    :param daily: 指数日线数据
+    :param env:
+    :return:
+    """
+    # 字段重命名
+    daily.rename(columns={'ts_code': 'uni_code'}, inplace=True)
+
+    # 时间格式化 全部统一改为 2012-2-12 这样的
+    daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
+
+    # 单位标准化
+    daily['amount'] = daily['amount'] * 1000
+
+    return daily
