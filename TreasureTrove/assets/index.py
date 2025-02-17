@@ -174,3 +174,52 @@ def china_index_daily_metrics(context: AssetExecutionContext, env: EnvResource):
         results.append(batch)
 
     ingestion_output(asset_key_path, context, pd.concat(results))
+
+
+@asset(
+    group_name='Ingestion',
+    key=AssetKey(["sources", "tushare", "china_index_weight"]),
+)
+def china_index_weight(context: AssetExecutionContext, env: EnvResource):
+    """
+    A股指数的权重股
+    :param context:
+    :param env:
+    :return:
+    """
+    # tushare初始化
+    ts.set_token(env.tushare_token)
+    pro = ts.pro_api()
+
+    ts_codes = list(index_ts_code_mapping.values())
+
+    # 读取存储数据，确定每个指数的最后更新日期
+    default_trade_date = pd.to_datetime('20000101')  # 默认交易起始日期
+
+    asset_key_path = context.asset_key.path
+    dir_path, file_name, file_path = get_path(asset_key_path)
+    last_dates = get_ts_source_last_trade_date_by_tscode(
+        path=file_path,
+        ts_codes=ts_codes,
+        default_trade_date=default_trade_date,
+        context=context,
+    )
+    # TODO:取数区间有问题，需要生成每月第一天和最后一天才能取数
+    daily_fetcher = TushareFetcher(
+        fetch_func=pro.index_weight,
+        ts_codes=ts_codes,
+        window_days=30,
+        context=context,
+        #max_rows=4000,
+    )
+
+    results = []
+    for index, row in last_dates.iterrows():
+        batch = daily_fetcher.single_ts_code_fetch(
+            ts_code=row['ts_code'],
+            start_date=row['trade_date'].strftime('%Y%m%d'),
+            end_date=datetime.now().strftime('%Y%m%d'),
+        )
+        results.append(batch)
+
+    ingestion_output(asset_key_path, context, pd.concat(results))
