@@ -8,6 +8,7 @@ from dagster import (
 import pandas as pd
 import os
 from TreasureTrove.resources import EnvResource
+from TreasureTrove.io_managers.pandas_io_manager import column_check, get_path, ingestion_output
 from datetime import datetime
 import tushare as ts
 from utils.tushare import TushareFetcher, get_ts_source_last_trade_date_by_tscode
@@ -24,11 +25,10 @@ index_ts_code_mapping = {
 
 
 @asset(
-    group_name='China_index',
+    group_name='Ingestion',
     key=AssetKey(["sources", "tushare", "china_index_daily"]),
-    io_manager_key="pandas_csv_ingestion",
 )
-def china_index_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
+def china_index_daily(context: AssetExecutionContext, env: EnvResource):
     """
     A股指数日线数据
     :param context:
@@ -45,11 +45,9 @@ def china_index_daily(context: AssetExecutionContext, env: EnvResource) -> pd.Da
     default_trade_date = pd.to_datetime('19910101')  # 默认交易起始日期
 
     asset_key_path = context.asset_key.path
-    filename = f"{asset_key_path[-1]}.csv"
-    path = os.path.join(env.warehouse_path, *asset_key_path[:-1], filename)
-    context.log.debug(f"path: {path} ")
+    dir_path, file_name, file_path = get_path(asset_key_path)
     last_dates = get_ts_source_last_trade_date_by_tscode(
-        path=path,
+        path=file_path,
         ts_codes=ts_codes,
         default_trade_date=default_trade_date,
         context=context,
@@ -72,25 +70,23 @@ def china_index_daily(context: AssetExecutionContext, env: EnvResource) -> pd.Da
         )
         results.append(batch)
 
-    return pd.concat(results, ignore_index=True)
+    ingestion_output(asset_key_path, context, pd.concat(results))
 
 
 @asset(
     group_name='China_index',
     key=AssetKey(["staging", "index", "china_index_daily"]),
-    ins={
-        "daily": AssetIn(key=["sources", "tushare", "china_index_daily"])
-    },
-    io_manager_def="pandas_csv_full_update",
+    io_manager_key="pandas_csv",
 )
-def stg_china_index_daily(context: AssetExecutionContext, daily: pd.DataFrame, env: EnvResource) -> pd.DataFrame:
+def stg_china_index_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
     """
     A股指数日线数据标准化清洗
     :param context:
-    :param daily: 指数日线数据
     :param env:
     :return:
     """
+    path = os.path.join(env.warehouse_path, 'sources', 'tushare', 'china_index_daily.csv')
+    daily = pd.read_csv(path)
     # 字段重命名
     daily.rename(columns={'ts_code': 'uni_code'}, inplace=True)
 
@@ -98,6 +94,7 @@ def stg_china_index_daily(context: AssetExecutionContext, daily: pd.DataFrame, e
     daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
 
     # 单位标准化
-    daily['amount'] = daily['amount'] * 1000
+    daily['amount'] = round(daily['amount'] * 1000)
+    context.log.info(f"A股指数日线数据共\n{len(daily)}条")
 
     return daily

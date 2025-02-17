@@ -12,7 +12,7 @@ from dagster import (
 from TreasureTrove.resources import WAREHOUSE_PATH
 
 
-def _get_path(asset_path: Sequence[str]) -> tuple[str, str, str]:
+def get_path(asset_path: Sequence[str]) -> tuple[str, str, str]:
     root_path = WAREHOUSE_PATH
     dir_path = None
     for _dir in asset_path[:-1]:
@@ -27,7 +27,7 @@ def _get_path(asset_path: Sequence[str]) -> tuple[str, str, str]:
     return dir_path, file_name, file_path
 
 
-def _column_check(obj: pd.DataFrame, file_path: str, context: OutputContext):
+def column_check(obj: pd.DataFrame, file_path: str, context: OutputContext):
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
         if set(obj.columns) != set(df.columns):
@@ -35,6 +35,7 @@ def _column_check(obj: pd.DataFrame, file_path: str, context: OutputContext):
             context.log.info(f"文件{file_path}的列名:{df.columns}")
             context.log.info(f"取数结果的列名:{obj.columns}")
             raise Exception(f"文件{file_path}的列名不匹配")
+        context.log.info(f"文件{file_path}的列名匹配")
 
 
 class CsvIOManager(ConfigurableIOManager):
@@ -43,7 +44,7 @@ class CsvIOManager(ConfigurableIOManager):
     """
 
     def handle_output(self, context: OutputContext, obj: pd.DataFrame):
-        dir_path, file_name, file_path = _get_path(context.asset_key.path)
+        dir_path, file_name, file_path = get_path(context.asset_key.path)
         # 如果路径不存在
         if not os.path.exists(dir_path):
             context.log.info(f"文件夹{dir_path}不存在，将创建文件夹")
@@ -51,32 +52,24 @@ class CsvIOManager(ConfigurableIOManager):
         return obj.to_csv(file_path, index=False)
 
     def load_input(self, context: InputContext):
-        dir_path, file_name, file_path = _get_path(context.upstream_output.asset_key.path)
+        context.log.info(f"跑到这里了")
+        dir_path, file_name, file_path = get_path(context.upstream_output.asset_key.path)
         if not os.path.exists(dir_path):
             raise Exception(f"文件夹{dir_path}不存在")
         context.log.info(f"读取文件:{file_name}.csv \n从文件夹{dir_path}")
         return pd.read_csv(file_path)
 
 
-class CsvIngestionIOManager(ConfigurableIOManager):
-    """
-    写入单个csv文件，没有分区，通过读取文件是否存在，判断concat还是直接写
-    """
-
-    def handle_output(self, context: OutputContext, obj: pd.DataFrame):
-        dir_path, file_name, file_path = _get_path(context.asset_key.path)
-        # 对已存在的文件，进行增量写入
-        if os.path.exists(file_path):
-            context.log.info(f"文件{file_path}已存在，将进行增量写入")
-            df = pd.read_csv(file_path)
-            _column_check(obj, file_path, context)
-            df = pd.concat([df, obj], ignore_index=True)
-            return df.to_csv(file_path, index=False)
-        else:
-            context.log.info(f"文件{file_path}不存在，将创建文件和文件夹")
-            os.makedirs(dir_path, exist_ok=True)
-            return obj.to_csv(file_path, index=False)
-
-    def load_input(self, context: InputContext):
-        pass
-
+def ingestion_output(asset_path: Sequence[str], context, obj: pd.DataFrame):
+    dir_path, file_name, file_path = get_path(asset_path)
+    # 对已存在的文件，进行增量写入
+    if os.path.exists(file_path):
+        context.log.info(f"文件{file_path}已存在，将进行增量写入")
+        df = pd.read_csv(file_path)
+        column_check(obj, file_path, context)
+        df = pd.concat([df, obj], ignore_index=True)
+        return df.to_csv(file_path, index=False)
+    else:
+        context.log.info(f"文件{file_path}不存在，将创建文件和文件夹")
+        os.makedirs(dir_path, exist_ok=True)
+        return obj.to_csv(file_path, index=False)
