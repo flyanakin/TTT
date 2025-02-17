@@ -43,17 +43,11 @@ class CsvIOManager(IOManager):
 
     def handle_output(self, context: OutputContext, obj: pd.DataFrame):
         dir_path, file_name, file_path = _get_path(context.asset_key.path)
-        # 对已存在的文件，进行增量写入
-        if os.path.exists(file_path):
-            context.log.info(f"文件{file_path}已存在，将进行增量写入")
-            df = pd.read_csv(file_path)
-            _column_check(obj, file_path, context)
-            df = pd.concat([df, obj], ignore_index=True)
-            return df.to_csv(file_path, index=False)
-        else:
-            context.log.info(f"文件{file_path}不存在，将创建文件和文件夹")
+        # 如果路径不存在
+        if not os.path.exists(dir_path):
+            context.log.info(f"文件夹{dir_path}不存在，将创建文件夹")
             os.makedirs(dir_path, exist_ok=True)
-            return obj.to_csv(file_path, index=False)
+        return obj.to_csv(file_path, index=False)
 
     def load_input(self, context: InputContext):
         dir_path, file_name, file_path = _get_path(context.upstream_output.asset_key.path)

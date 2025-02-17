@@ -12,7 +12,7 @@ defs = Definitions(
     assets=load_assets_from_package_module(assets),
     #jobs=[portfolio_job, financial_db_update_job],
     resources={
-        "pandas_csv": csv_io_manager,
+        "pandas_csv_full_update": csv_io_manager,
         "pandas_csv_ingestion": csv_ingestion_io_manager,
         "env": EnvResource(
             warehouse_path=EnvVar("WAREHOUSE_BASE_PATH"),
