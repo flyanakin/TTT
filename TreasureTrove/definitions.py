@@ -3,7 +3,7 @@ from dagster import (
     load_assets_from_package_module,
     EnvVar
 )
-from TreasureTrove.io_managers.pandas_io_manager import csv_io_manager, csv_ingestion_io_manager
+from TreasureTrove.io_managers.pandas_io_manager import CsvIOManager
 from TreasureTrove.resources import EnvResource, NasResource
 from TreasureTrove.jobs.demo_jobs import (portfolio_job, financial_db_update_job)
 from TreasureTrove import assets
@@ -12,8 +12,7 @@ defs = Definitions(
     assets=load_assets_from_package_module(assets),
     #jobs=[portfolio_job, financial_db_update_job],
     resources={
-        "pandas_csv": csv_io_manager,
-        "pandas_csv_ingestion": csv_ingestion_io_manager,
+        "pandas_csv": CsvIOManager(),
         "env": EnvResource(
             warehouse_path=EnvVar("WAREHOUSE_BASE_PATH"),
             tushare_token=EnvVar("TUSHARE_TOKEN"),
