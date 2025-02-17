@@ -118,9 +118,11 @@ def get_ts_source_last_trade_date_by_tscode(
         # 对于未查到记录的ts_code，填充默认trade_date
         trade_date_df['trade_date'] = trade_date_df['trade_date'].fillna(default_trade_date)
 
-        # 如果trade_date等于今天，则去掉这一行
-        trade_date_df['trade_date'] = pd.to_datetime(trade_date_df['trade_date']).dt.date
-        trade_date_df = trade_date_df[trade_date_df['trade_date'] != pd.Timestamp.now().date()]
+        # 如果trade_date等于今天，则去掉这一行，复制再去掉
+        trade_date_df['date'] = trade_date_df['trade_date']
+        trade_date_df['date'] = pd.to_datetime(trade_date_df['date']).dt.date
+        trade_date_df = trade_date_df[trade_date_df['date'] != pd.Timestamp.now().date()]
+        trade_date_df = trade_date_df.drop(columns=['date'], inplace=True)
         # context.log.debug(f"now\n{pd.Timestamp.now().date()}")
-        context.log.info(f"目标symbol最后交易日期\n{trade_date_df}")
+    context.log.info(f"目标symbol最后交易日期\n{trade_date_df}")
     return trade_date_df
