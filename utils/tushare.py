@@ -12,6 +12,7 @@ class TushareFetcher:
                  ts_codes: list[str] = None,
                  max_rows: int = 8000,
                  window_days: int = 90,
+                 code_field: str = 'ts_code',
                  context=None
                  ):
         """
@@ -28,6 +29,7 @@ class TushareFetcher:
         self.max_rows = max_rows
         self.window_days = window_days
         self.context = context
+        self.code_field = code_field
 
     def _date_range(self,
                     start: datetime,
@@ -73,11 +75,22 @@ class TushareFetcher:
         results = []
         for s, e in self._date_range(start, end):
             self.context.log.info(f"Fetching {ts_code} data from {s} to {e}")
-            batch = self.fetch_func(ts_code=ts_code, start_date=s.strftime("%Y%m%d"), end_date=e.strftime("%Y%m%d"))
+            # 构造动态参数字典
+            params = {
+                self.code_field: ts_code,
+                "start_date": s.strftime("%Y%m%d"),
+                "end_date": e.strftime("%Y%m%d")
+            }
+            batch = self.fetch_func(**params)
             time.sleep(3)
             results.append(batch)
             self.context.log.info(f"Fetched {len(batch)} rows")
-        return pd.concat(results, ignore_index=True)
+
+        if len(results) == 0:
+            self.context.log.info(f"No data found for {ts_code}")
+            return pd.DataFrame()
+        else:
+            return pd.concat(results, ignore_index=True)
 
 
 def get_ts_source_last_trade_date_by_tscode(

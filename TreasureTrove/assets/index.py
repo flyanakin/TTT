@@ -204,13 +204,13 @@ def china_index_weight(context: AssetExecutionContext, env: EnvResource):
         default_trade_date=default_trade_date,
         context=context,
     )
-    # TODO:取数区间有问题，需要生成每月第一天和最后一天才能取数
     daily_fetcher = TushareFetcher(
         fetch_func=pro.index_weight,
         ts_codes=ts_codes,
-        window_days=30,
+        window_days=90,
         context=context,
-        #max_rows=4000,
+        max_rows=6000,
+        code_field='index_code'
     )
 
     results = []
