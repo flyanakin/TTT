@@ -81,6 +81,8 @@ class TushareFetcher:
             if self.params:
                 params = self.params.copy()
                 params['ts_code'] = ts_code
+                params['start_date'] = s.strftime("%Y%m%d")
+                params['end_date'] = e.strftime("%Y%m%d")
             else:
                 params = {
                     self.code_field: ts_code,
