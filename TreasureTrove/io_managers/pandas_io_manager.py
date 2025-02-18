@@ -52,7 +52,6 @@ class CsvIOManager(ConfigurableIOManager):
         return obj.to_csv(file_path, index=False)
 
     def load_input(self, context: InputContext):
-        context.log.info(f"跑到这里了")
         dir_path, file_name, file_path = get_path(context.upstream_output.asset_key.path)
         if not os.path.exists(dir_path):
             raise Exception(f"文件夹{dir_path}不存在")
