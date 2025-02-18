@@ -7,9 +7,6 @@
     - name: uni_code
       description: 投资标的的唯一标识，如"000300.SH"
 
-    - name: ts_code
-      description: TS指数代码
-
     - name: trade_date
       description: 交易日，格式为"YYYY-MM-DD"
 
@@ -39,6 +36,48 @@
 
     - name: amount
       description: 成交额（元）
+
+
+- name: A股指数每日指标
+  description: 包含指数交易日、市值、股本、换手率、市盈率、市净率等多项指标
+  model: staging
+  asset_key: staging/index/china_index_daily_metrics
+  columns:
+    - name: uni_code
+      description: 唯一代码
+
+    - name: trade_date
+      description: 交易日期，格式为"YYYY-MM-DD"
+
+    - name: total_mv
+      description: 当日总市值（元）
+
+    - name: float_mv
+      description: 当日流通市值（元）
+
+    - name: total_share
+      description: 当日总股本（股）
+
+    - name: float_share
+      description: 当日流通股本（股）
+
+    - name: free_share
+      description: 当日自由流通股本（股）
+
+    - name: turnover_rate
+      description: 换手率
+
+    - name: turnover_rate_by_float
+      description: 换手率(基于自由流通股本)
+
+    - name: pe
+      description: 市盈率
+
+    - name: pe_ttm
+      description: 市盈率TTM
+
+    - name: pb
+      description: 市净率
 
 
 - name: A股指数基础数据
