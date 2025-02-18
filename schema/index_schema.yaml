@@ -39,7 +39,7 @@
 
 
 - name: A股指数每日指标
-  description: 包含指数交易日、市值、股本、换手率、市盈率、市净率等多项指标
+  description: 包含指数交易日、市值、股本、换手率、市盈率、市净率等多项指标，主要数据来源https://tushare.pro/document/2?doc_id=95
   model: staging
   asset_key: staging/index/china_index_daily_metrics
   columns:
@@ -78,6 +78,43 @@
 
     - name: pb
       description: 市净率
+
+
+- name: 国际股票指数日线数据
+  description: https://tushare.pro/document/2?doc_id=211，
+               只拉取几个宽基指数：恒生指数、恒生科技指数、道琼斯指数、标普500指数、纳斯达克指数、日经225
+  model: staging
+  asset_key: staging/index/global_index_daily
+  columns:
+    - name: uni_code
+      description: 投资标的的唯一标识
+
+    - name: trade_date
+      description: 交易日，格式为"YYYY-MM-DD"
+
+    - name: open
+      description: 开盘点位
+
+    - name: high
+      description: 最高点位
+
+    - name: low
+      description: 最低点位
+
+    - name: close
+      description: 收盘点位
+
+    - name: pre_close
+      description: 昨日收盘点
+
+    - name: change
+      description: 涨跌点
+
+    - name: pct_chg
+      description: 涨跌幅（%）
+
+    - name: vol
+      description: 成交量（手）
 
 
 - name: A股指数基础数据
