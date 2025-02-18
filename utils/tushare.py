@@ -13,6 +13,7 @@ class TushareFetcher:
                  max_rows: int = 8000,
                  window_days: int = 90,
                  code_field: str = 'ts_code',
+                 params: dict = None,
                  context=None
                  ):
         """
@@ -30,6 +31,7 @@ class TushareFetcher:
         self.window_days = window_days
         self.context = context
         self.code_field = code_field
+        self.params = params
 
     def _date_range(self,
                     start: datetime,
@@ -75,12 +77,18 @@ class TushareFetcher:
         results = []
         for s, e in self._date_range(start, end):
             self.context.log.info(f"Fetching {ts_code} data from {s} to {e}")
-            # 构造动态参数字典
-            params = {
-                self.code_field: ts_code,
-                "start_date": s.strftime("%Y%m%d"),
-                "end_date": e.strftime("%Y%m%d")
-            }
+            # 构造动态参数字典，TODO：后面要改掉这个丑陋的东西
+            if self.params:
+                params = self.params.copy()
+                params['ts_code'] = ts_code
+                params['start_date'] = s.strftime("%Y%m%d")
+                params['end_date'] = e.strftime("%Y%m%d")
+            else:
+                params = {
+                    self.code_field: ts_code,
+                    "start_date": s.strftime("%Y%m%d"),
+                    "end_date": e.strftime("%Y%m%d")
+                }
             batch = self.fetch_func(**params)
             time.sleep(3)
             results.append(batch)

@@ -16,3 +16,7 @@ class EnvResource(ConfigurableResource):
 class NasResource(ConfigurableResource):
     nas_user: str
     nas_password: str
+
+
+class TushareBarsConfig(Config):
+    params: dict
