@@ -281,3 +281,28 @@ def global_index_daily(context: AssetExecutionContext, env: EnvResource):
         results.append(batch)
 
     ingestion_output(asset_key_path, context, pd.concat(results))
+
+
+@asset(
+    group_name='China_index',
+    key=AssetKey(["staging", "index", "china_index_daily_metric"]),
+    io_manager_key="pandas_csv",
+)
+def stg_china_index_daily_metric(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
+    """
+    A股指数每日指标标准化清洗
+    :param context:
+    :param env:
+    :return:
+    """
+    path = os.path.join(env.warehouse_path, 'sources', 'tushare', 'china_index_daily_metrics.csv')
+    daily = pd.read_csv(path)
+    # 字段重命名
+    daily.rename(columns={'ts_code': 'uni_code'}, inplace=True)
+
+    # 时间格式化 全部统一改为 2012-2-12 这样的
+    daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
+
+    context.log.info(f"A股指数每日指标数据共\n{len(daily)}条")
+
+    return daily
