@@ -331,3 +331,43 @@ def stg_global_index_daily(context: AssetExecutionContext, env: EnvResource) -> 
     context.log.info(f"全球股票指数每日指标数据共\n{len(daily)}条")
 
     return daily
+
+
+@asset(
+    group_name='China_index',
+    key=AssetKey(["marts", "index_timing"]),
+    ins={
+            "china_daily": AssetIn(key=["staging", "index", "china_index_daily"]),
+            "china_daily_metrics": AssetIn(key=["staging", "index", "china_index_daily_metric"]),
+            "global_index": AssetIn(key=["staging", "index", "global_index_daily"]),
+         },
+    io_manager_key="pandas_csv",
+)
+def index_timing(
+        context: AssetExecutionContext,
+        china_daily: pd.DataFrame,
+        china_daily_metrics: pd.DataFrame,
+        global_index: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    指数择时
+    :param context:
+    :param env:
+    :param china_daily:
+    :param china_daily_metrics:
+    :param global_index:
+    :return:
+    """
+    daily = pd.merge(
+        china_daily,
+        china_daily_metrics,
+        on=['uni_code', 'trade_date'],
+        how='left'
+    )
+
+    global_index.drop(columns=['swing'], inplace=True)
+
+    result = pd.concat([daily, global_index], ignore_index=True)
+
+    return result
+

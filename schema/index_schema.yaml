@@ -117,6 +117,75 @@
       description: 成交量（手）
 
 
+- name: 指数择时策略数据
+  description: 包含全球主要股指的交易数据，用于指数择时策略
+  model: marts
+  asset_key: marts/index_timing
+  columns:
+    - name: uni_code
+      description: 投资标的的唯一标识，例如“000300.SH”
+
+    - name: trade_date
+      description: 交易日期，格式为“YYYY-MM-DD”
+
+    - name: close
+      description: 收盘价
+
+    - name: open
+      description: 开盘价
+
+    - name: high
+      description: 最高价
+
+    - name: low
+      description: 最低价
+
+    - name: pre_close
+      description: 前收盘价
+
+    - name: change
+      description: 价格变动
+
+    - name: pct_chg
+      description: 涨跌幅
+
+    - name: vol
+      description: 交易量
+
+    - name: amount
+      description: 交易金额
+
+    - name: total_mv
+      description: 当日总市值
+
+    - name: float_mv
+      description: 当日流通市值
+
+    - name: total_share
+      description: 当日总股本
+
+    - name: float_share
+      description: 当日流通股本
+
+    - name: free_share
+      description: 当日自由流通股本
+
+    - name: turnover_rate
+      description: 换手率
+
+    - name: turnover_rate_f
+      description: 换手率(基于自由流通股本)
+
+    - name: pe
+      description: 市盈率
+
+    - name: pe_ttm
+      description: 市盈率TTM
+
+    - name: pb
+      description: 市净率
+
+
 - name: A股指数基础数据
   description: 数据源为 tushare，https://tushare.pro/document/2?doc_id=94，全量更新，字典直接看链接
   model: sources
