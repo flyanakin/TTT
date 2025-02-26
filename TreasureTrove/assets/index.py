@@ -104,6 +104,12 @@ def stg_china_index_daily(context: AssetExecutionContext, env: EnvResource) -> p
     # 时间格式化 全部统一改为 2012-2-12 这样的
     daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
 
+    # 去除重复数据
+    daily.drop_duplicates(subset=['trade_date', 'uni_code'], inplace=True)
+
+    # 排序
+    daily.sort_values(by=['trade_date', 'uni_code'], inplace=True)
+
     # 单位标准化
     daily['amount'] = round(daily['amount'] * 1000)
     context.log.info(f"A股指数日线数据共\n{len(daily)}条")
@@ -303,6 +309,12 @@ def stg_china_index_daily_metric(context: AssetExecutionContext, env: EnvResourc
     # 时间格式化 全部统一改为 2012-2-12 这样的
     daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
 
+    # 去除重复数据
+    daily.drop_duplicates(subset=['trade_date', 'uni_code'], inplace=True)
+
+    # 排序
+    daily.sort_values(by=['trade_date', 'uni_code'], inplace=True)
+
     context.log.info(f"A股指数每日指标数据共\n{len(daily)}条")
 
     return daily
@@ -327,6 +339,12 @@ def stg_global_index_daily(context: AssetExecutionContext, env: EnvResource) -> 
 
     # 时间格式化 全部统一改为 2012-2-12 这样的
     daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
+
+    # 去除重复数据
+    daily.drop_duplicates(subset=['trade_date', 'uni_code'], inplace=True)
+
+    # 排序
+    daily.sort_values(by=['trade_date', 'uni_code'], inplace=True)
 
     context.log.info(f"全球股票指数每日指标数据共\n{len(daily)}条")
 
@@ -368,6 +386,8 @@ def index_timing(
     global_index.drop(columns=['swing'], inplace=True)
 
     result = pd.concat([daily, global_index], ignore_index=True)
+
+    result.sort_values(by=['trade_date', 'uni_code'], inplace=True)
 
     return result
 
