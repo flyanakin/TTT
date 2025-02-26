@@ -124,6 +124,14 @@ def get_ts_source_last_trade_date_by_tscode(
     else:
         context.log.info(f"{path} 文件存在，读取文件")
         df = pd.read_csv(path)
+        if df.empty:
+            context.log.info(f"{path} 文件为空，返回默认初始交易日")
+            trade_date_df = pd.DataFrame({
+                'ts_code': ts_codes,
+                'trade_date': default_trade_date
+            })
+            return trade_date_df
+
         # 如果需要，可以将trade_date转换为日期格式：
         df['trade_date'] = pd.to_datetime(df['trade_date'], format='%Y%m%d')
 
