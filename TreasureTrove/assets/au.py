@@ -164,12 +164,14 @@ def stg_au_etf_daily(context: AssetExecutionContext, env: EnvResource) -> pd.Dat
     path = os.path.join(env.warehouse_path, 'sources', 'tushare', 'au', 'au_etf_daily.csv')
     daily = pd.read_csv(path)
     # 字段重命名
-    daily.rename(columns={'ts_code': 'uni_code'}, inplace=True)
+    daily.rename(columns={'ts_code': 'symbol'}, inplace=True)
+
+    daily.drop_duplicates(subset=['trade_date', 'symbol'], inplace=True)
 
     # 时间格式化 全部统一改为 2012-2-12 这样的
     daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
 
-    daily.sort_values(by=['trade_date', 'uni_code'], ascending=[True, True], inplace=True)
+    daily.sort_values(by=['trade_date', 'symbol'], ascending=[True, True], inplace=True)
 
     daily['pct_chg'] = round(daily['close'] / daily['pre_close'] - 1, 4)
 
@@ -197,23 +199,25 @@ def xau_usd_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFr
     daily = pd.read_csv(path)
     # 字段重命名
     daily.rename(columns={
-        'ts_code': 'uni_code',
+        'ts_code': 'symbol',
         'bid_close': 'close',
     }, inplace=True)
+
+    daily.drop_duplicates(subset=['trade_date', 'symbol'], inplace=True)
 
     # 时间格式化 全部统一改为 2012-2-12 这样的
     daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
 
-    daily.sort_values(by=['trade_date', 'uni_code'], ascending=[True, True], inplace=True)
+    daily.sort_values(by=['trade_date', 'symbol'], ascending=[True, True], inplace=True)
 
     # 计算 pre_close
-    daily['pre_close'] = daily.groupby('uni_code')['close'].shift(1)
+    daily['pre_close'] = daily.groupby('symbol')['close'].shift(1)
     # 删除无前日数据
     daily.dropna(subset=['pre_close'], inplace=True)
 
     daily['pct_chg'] = round(daily['close'] / daily['pre_close'] - 1, 4)
 
-    daily = daily[['trade_date', 'uni_code', 'close', 'pre_close', 'pct_chg']]
+    daily = daily[['trade_date', 'symbol', 'close', 'pre_close', 'pct_chg']]
 
     context.log.info(f"黄金ETF日线数据共\n{len(daily)}条")
 
@@ -235,15 +239,17 @@ def seg_au99_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataF
     path = os.path.join(env.warehouse_path, 'sources', 'tushare', 'au', 'seg_au99_daily.csv')
     daily = pd.read_csv(path)
     # 字段重命名
-    daily.rename(columns={'ts_code': 'uni_code'}, inplace=True)
+    daily.rename(columns={'ts_code': 'symbol'}, inplace=True)
+
+    daily.drop_duplicates(subset=['trade_date', 'symbol'], inplace=True)
 
     # 时间格式化 全部统一改为 2012-2-12 这样的
     daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
 
-    daily.sort_values(by=['trade_date', 'uni_code'], ascending=[True, True], inplace=True)
+    daily.sort_values(by=['trade_date', 'symbol'], ascending=[True, True], inplace=True)
 
     # 计算 pre_close
-    daily['pre_close'] = daily.groupby('uni_code')['close'].shift(1)
+    daily['pre_close'] = daily.groupby('symbol')['close'].shift(1)
     # 删除无前日数据
     daily.dropna(subset=['pre_close'], inplace=True)
 
