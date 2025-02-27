@@ -4,7 +4,7 @@
   model: staging
   asset_key: staging/index/china_index_daily
   columns:
-    - name: uni_code
+    - name: symbol
       description: 投资标的的唯一标识，如"000300.SH"
 
     - name: trade_date
@@ -43,7 +43,7 @@
   model: staging
   asset_key: staging/index/china_index_daily_metrics
   columns:
-    - name: uni_code
+    - name: symbol
       description: 唯一代码
 
     - name: trade_date
@@ -86,7 +86,7 @@
   model: staging
   asset_key: staging/index/global_index_daily
   columns:
-    - name: uni_code
+    - name: symbol
       description: 投资标的的唯一标识
 
     - name: trade_date
@@ -122,7 +122,7 @@
   model: marts
   asset_key: marts/index_timing
   columns:
-    - name: uni_code
+    - name: symbol
       description: 投资标的的唯一标识，例如“000300.SH”
 
     - name: trade_date
