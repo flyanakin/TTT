@@ -188,7 +188,7 @@ def stg_au_etf_daily(context: AssetExecutionContext, env: EnvResource) -> pd.Dat
     key=AssetKey(["staging", "au", "xau_usd_daily"]),
     io_manager_key="pandas_csv",
 )
-def xau_usd_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
+def stg_xau_usd_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
     """
     美元黄金日线数据标准化清洗
     :param context:
@@ -229,7 +229,7 @@ def xau_usd_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFr
     key=AssetKey(["staging", "au", "seg_au99_daily"]),
     io_manager_key="pandas_csv",
 )
-def seg_au99_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
+def stg_seg_au99_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
     """
     黄金现货日线数据标准化清洗
     :param context:
