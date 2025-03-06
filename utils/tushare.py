@@ -26,7 +26,7 @@ class TushareFetcher:
         """
         self.fetch_func = fetch_func
         self.ts_codes = ts_codes
-        self.ts_code_cnt = len(ts_codes)
+        # self.ts_code_cnt = len(ts_codes)
         self.max_rows = max_rows
         self.window_days = window_days
         self.context = context
@@ -96,6 +96,42 @@ class TushareFetcher:
 
         if len(results) == 0:
             self.context.log.info(f"No data found for {ts_code}")
+            return pd.DataFrame()
+        else:
+            return pd.concat(results, ignore_index=True)
+
+    def param_fetch(self,
+                    param,
+                    param_name: str,
+                    start_date: str,
+                    end_date: str
+                    ) -> pd.DataFrame:
+        """
+        按某个参数, 分批获取数据。回溯时间长的场景
+        :param param: 参数
+        :param param_name: 参数的名称
+        :param start_date: 查询的起始日期
+        :param end_date: 查询的终止日期
+        :return: 获取的数据
+        """
+        start = datetime.strptime(start_date, '%Y%m%d')
+        end = datetime.strptime(end_date, '%Y%m%d')
+        self.context.log.info(f"windows \nstart_date: {start}, \nend_date: {end}")
+        results = []
+        for s, e in self._date_range(start, end):
+            self.context.log.info(f"Fetching {param_name}:{param} data from {s} to {e}")
+            params = {
+                param_name: param,
+                "start_date": s.strftime("%Y%m%d"),
+                "end_date": e.strftime("%Y%m%d")
+            }
+            batch = self.fetch_func(**params)
+            time.sleep(3)
+            results.append(batch)
+            self.context.log.info(f"Fetched {len(batch)} rows")
+
+        if len(results) == 0:
+            self.context.log.info(f"No data found for {param_name}:{param}")
             return pd.DataFrame()
         else:
             return pd.concat(results, ignore_index=True)
