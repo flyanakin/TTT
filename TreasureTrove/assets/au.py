@@ -258,3 +258,80 @@ def stg_seg_au99_daily(context: AssetExecutionContext, env: EnvResource) -> pd.D
     context.log.info(f"黄金现货日线数据共\n{len(daily)}条")
 
     return daily
+
+
+@asset(
+    group_name='Ingestion',
+    key=AssetKey(["sources", "tushare", "au", "au_future_daily"]),
+)
+def au_future_daily(context: AssetExecutionContext, env: EnvResource):
+    """
+    上海期货所黄金期货的日线数据
+    :param context:
+    :param env:
+    :return:
+    """
+    # tushare初始化
+    ts.set_token(env.tushare_token)
+    pro = ts.pro_api()
+
+    asset_key_path = context.asset_key.path
+    dir_path, file_name, file_path = get_path(asset_key_path)
+    last_dates = get_ts_source_last_trade_date_by_tscode(
+        path=file_path,
+        ts_codes=['AU.SHF'],
+        default_trade_date=pd.to_datetime('20090101'),
+        context=context,
+    )
+
+    daily_fetcher = TushareFetcher(
+        fetch_func=pro.fut_daily,
+        ts_codes=['AU.SHF'],
+        window_days=1500,
+        context=context,
+        max_rows=2000,
+    )
+
+    au99 = daily_fetcher.single_ts_code_fetch(
+        ts_code='AU.SHF',
+        start_date=last_dates.iloc[0]['trade_date'].strftime('%Y%m%d'),
+        end_date=datetime.now().strftime('%Y%m%d'),
+    )
+
+    ingestion_output(asset_key_path, context, au99)
+
+
+@asset(
+    group_name='Au',
+    key=AssetKey(["staging", "au", "au_future_daily"]),
+    io_manager_key="pandas_csv",
+)
+def stg_au_future_daily(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
+    """
+    黄金期货日线数据标准化清洗
+    :param context:
+    :param env:
+    :return:
+    """
+    path = os.path.join(env.warehouse_path, 'sources', 'tushare', 'au', 'au_future_daily.csv')
+    daily = pd.read_csv(path)
+    # 字段重命名
+    daily.rename(columns={'ts_code': 'symbol'}, inplace=True)
+
+    daily.drop_duplicates(subset=['trade_date', 'symbol'], inplace=True)
+
+    # 时间格式化 全部统一改为 2012-2-12 这样的
+    daily['trade_date'] = pd.to_datetime(daily['trade_date'], format='%Y%m%d')
+
+    daily.sort_values(by=['trade_date', 'symbol'], ascending=[True, True], inplace=True)
+
+    # 计算 pre_close
+    daily['pre_close'] = daily.groupby('symbol')['close'].shift(1)
+    # 删除无前日数据
+    daily.dropna(subset=['pre_close'], inplace=True)
+
+    daily['pct_chg'] = round(daily['close'] / daily['pre_close'] - 1, 4)
+
+    context.log.info(f"黄金期货日线数据共\n{len(daily)}条")
+
+    return daily
