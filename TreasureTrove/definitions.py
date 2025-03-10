@@ -5,12 +5,13 @@ from dagster import (
 )
 from TreasureTrove.io_managers.pandas_io_manager import CsvIOManager
 from TreasureTrove.resources import EnvResource, NasResource
-from TreasureTrove.jobs.demo_jobs import (portfolio_job, financial_db_update_job)
+from TreasureTrove.jobs.ingestion_job import ingestion_daily, ingestion_daily_schedule
 from TreasureTrove import assets
 
 defs = Definitions(
     assets=load_assets_from_package_module(assets),
-    #jobs=[portfolio_job, financial_db_update_job],
+    jobs=[ingestion_daily],
+    schedules=[ingestion_daily_schedule],
     resources={
         "pandas_csv": CsvIOManager(),
         "env": EnvResource(
