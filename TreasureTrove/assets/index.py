@@ -391,3 +391,41 @@ def index_timing(
 
     return result
 
+
+@asset(
+    group_name='China_index',
+    key=AssetKey(["staging", "index", "us_economy_monthly_metric"]),
+    io_manager_key="pandas_csv",
+)
+def stg_us_economy_monthly_metric(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
+    """
+    美国经济数据，以sp500为基准
+    :param context:
+    :param env:
+    :return:
+    """
+    path = os.path.join(env.warehouse_path, 'sources', 'shriller_data', 'sp500_metrics.xlsx')
+    df = pd.read_excel(path)
+
+    # 时间格式化
+    # 拼接“-01”，转换为datetime格式
+    df['trade_date'] = pd.to_datetime(df['trade_date'].astype(str) + '-01', format='%Y.%m-%d')
+
+    # 格式化为'YYYY-MM-DD'
+    df['trade_date'] = df['trade_date'].dt.strftime('%Y-%m-%d')
+
+    # 去除重复数据
+    df.drop_duplicates(subset=['trade_date'], inplace=True)
+
+    # 浮点数保留小数点后两位
+    df['dps'] = df['dps'].round(2)
+    df['eps'] = df['eps'].round(2)
+    df['cpi'] = df['cpi'].round(2)
+    df['long_interest_rate_gs10'] = df['long_interest_rate_gs10'].round(2)
+
+    # 排序
+    df.sort_values(by=['trade_date'], inplace=True)
+
+    context.log.info(f"sp500指数月度指标数据共\n{len(df)}条")
+
+    return df
