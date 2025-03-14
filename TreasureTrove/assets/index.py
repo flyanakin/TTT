@@ -391,3 +391,74 @@ def index_timing(
     result.sort_values(by=['trade_date', 'symbol'], inplace=True)
 
     return result
+
+
+@asset(
+    group_name='China_index',
+    key=AssetKey(["staging", "index", "us_economy_monthly_metric"]),
+    io_manager_key="pandas_csv",
+)
+def stg_us_economy_monthly_metric(context: AssetExecutionContext, env: EnvResource) -> pd.DataFrame:
+    """
+    美国经济数据，以sp500为基准
+    :param context:
+    :param env:
+    :return:
+    """
+    path = os.path.join(env.warehouse_path, 'sources', 'shriller_data', 'sp500_metrics.xlsx')
+    df = pd.read_excel(path)
+
+    # 浮点数保留小数点后两位
+    df['dps'] = df['dps'].round(2)
+    df['eps'] = df['eps'].round(2)
+    df['cpi'] = df['cpi'].round(2)
+    df['long_interest_rate_gs10'] = df['long_interest_rate_gs10'].round(2)
+
+    # 删除无用列
+    df.drop(columns=['month', 'year'], inplace=True)
+
+    context.log.info(f"sp500指数月度指标数据共\n{len(df)}条")
+
+    return df
+
+
+@asset(
+    group_name='China_index',
+    key=AssetKey(["marts", "sp500_cape"]),
+    ins={
+            "us_eco": AssetIn(key=["staging", "index", "us_economy_monthly_metric"]),
+            "global_index": AssetIn(key=["staging", "index", "global_index_daily"]),
+         },
+    io_manager_key="pandas_csv",
+)
+def sp500_cape(
+        context: AssetExecutionContext,
+        us_eco: pd.DataFrame,
+        global_index: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    标普500的cape计算
+    :param context:
+    :param us_eco:
+    :param global_index:
+    :return:
+    """
+    daily = global_index[global_index['symbol'] == 'SPX']
+
+    # 确保交易日期列为 datetime 格式
+    daily['trade_date'] = pd.to_datetime(daily['trade_date'])
+    us_eco['trade_month'] = pd.to_datetime(us_eco['trade_month'])
+
+    # 为 daily 和 us_eco 创建月份字段，便于按月合并
+    daily['month'] = daily['trade_date'].dt.to_period('M')
+    us_eco['month'] = us_eco['trade_month'].dt.to_period('M')
+
+    # 使用左连接将 daily 和 us_eco 合并，保证同一月内所有交易日都使用相同的 us_eco 数据
+    merged = pd.merge(daily, us_eco, on='month', how='left')
+
+    # 如果不需要 month 列，可以选择在返回之前将其删除
+    merged.drop(columns=['month', 'trade_month', 'date'], inplace=True)
+
+    result = calculate_shriller_pe(merged, 319.22)
+
+    return result
